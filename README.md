@@ -15,7 +15,7 @@
     ```
 
 ## Quick Start
-1. Play the MPC controller on Aliengo:
+1. Replay the RL policy on Crazydog (Biped wheel robot):
     ```bash
     conda activate rlmujoco
     cd crazydog_urdf
