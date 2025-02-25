@@ -1,5 +1,5 @@
 <mujoco model="crazydog_urdf">
-    <compiler angle="radian" meshdir="/home/csl/robot_model/crazydog_urdf/meshes/" />
+    <compiler angle="radian" meshdir="meshes" />
     <size njmax="500" nconmax="100" />
 
     <option cone="elliptic" impratio="100" />

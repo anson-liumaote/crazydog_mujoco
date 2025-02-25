@@ -1,7 +1,6 @@
 # 
-# policy_path: "/home/csl/IsaacLab/logs/rsl_rl/bipedal/2024-11-22_09-19-31/exported/policy.pt"
-policy_path:  "/home/csl/crazydog/crazydog_ws/src/rl_control/rl_control/model/2024-12-26_13-37-36/exported/policy.pt"
-xml_path: "/home/csl/robot_model/crazydog_urdf/scene.xml"
+policy_path:  "model/2024-12-26_13-37-36/exported/policy.pt"
+xml_path: "scene.xml"
 
 # Total simulation time
 simulation_duration: 60.0

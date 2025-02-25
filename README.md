@@ -23,4 +23,12 @@
     ```
     All supported two version of biped wheel robot.
 
+2. Replay the RL policy on Reddog (Quadruped robot):
+    ```bash
+    conda activate rlmujoco
+    cd reddog
+    python mujoco_rl_pos.py config/reddog.yaml
+    ```
+    All supported two version of biped wheel robot.
+
 

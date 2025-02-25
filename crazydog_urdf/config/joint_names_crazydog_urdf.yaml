@@ -1,1 +1,0 @@
-controller_joint_names: ['', 'baselink2R_hip', 'R_hip2R_thigh', 'R_thigh2R_calf', 'R_calf2R_wheel', 'baselink2L_hip', 'L_hip2L_thigh', 'L_thigh2L_calf', 'L_calf2L_wheel', ]

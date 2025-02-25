@@ -83,9 +83,8 @@ if __name__ == "__main__":
     parser.add_argument("config_file", type=str, help="config file name in the config folder")
     args = parser.parse_args()
     config_file = args.config_file
-    with open(f"/home/csl/robot_model/crazydog_urdf/{config_file}", "r") as f:
+    with open(f"{config_file}", "r") as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
-        # policy_path = "/home/csl/robot_model/crazydog_urdf/model/biped_wheel_2dof_policy.pt"
         policy_path = config["policy_path"]
         policy = torch.jit.load(policy_path)
         xml_path = config["xml_path"]
@@ -160,6 +159,7 @@ if __name__ == "__main__":
 
                 obs[:3] = lin_vel_I * lin_vel_scale
                 obs[3:6] = ang_vel_I * ang_vel_scale
+                obs[3:6] = np.array([0, 0, ang_vel_I[2]])
                 obs[6:9] = gravity_b
                 obs[9:12] = cmd_vel
                 obs[12:14] = qvel * dof_vel_scale
