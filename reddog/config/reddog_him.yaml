@@ -10,7 +10,7 @@ simulation_dt: 0.005
 # Controller update frequency (meets the requirement of simulation_dt * controll_decimation=0.02; 50Hz)
 control_decimation: 4
 
-# kps: [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
+# kps: [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]
 # kds: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 kps: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
 # kps: [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]

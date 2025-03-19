@@ -1,6 +1,6 @@
 # 
-# policy_path:  "pre_train/isaacgym/exported/policies/policy_1.pt"
-policy_path: "/home/csl/mujoco_rl/crazydog_mujoco/reddog/pre_train/isaacgym/exported/policies/v1/policy_1.pt"
+policy_path:  "pre_train/isaacgym/exported/policies/policy_1.pt"
+# policy_path: "/home/csl/mujoco_rl/crazydog_mujoco/reddog/pre_train/isaacgym/exported/policies/v1/policy_1.pt"
 xml_path: "scene.xml"
 
 # Total simulation time

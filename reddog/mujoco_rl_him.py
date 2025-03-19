@@ -7,6 +7,8 @@ import torch
 import yaml
 import matplotlib.pyplot as plt
 import argparse
+
+# from gamepaded import gamepad_reader
 NUM_MOTOR = 12
 
 def calculate_com_in_base_frame(model, data, base_body_id):
@@ -115,7 +117,7 @@ if __name__ == "__main__":
     action = np.zeros(num_actions, dtype=np.float32)
     obs = np.zeros(num_obs, dtype=np.float32)
 
-
+    # gamepad = gamepad_reader.Gamepad(vel_scale_x=0.5, vel_scale_y=0.5, vel_scale_rot=0.8)
 
     # Load robot model
     m = mujoco.MjModel.from_xml_path(xml_path)
@@ -159,13 +161,14 @@ if __name__ == "__main__":
                 gravity_b = get_gravity_orientation(d.sensordata[36:40])
                 cmd_vel = np.array(config["cmd_init"], dtype=np.float32)
 
-                obs_list = []
-                obs_list.append(cmd_vel * cmd_scale)
-                obs_list.append(ang_vel_I * ang_vel_scale)
-                obs_list.append(gravity_b)
-                obs_list.append((qpos - default_angles) * dof_pos_scale)
-                obs_list.append(qvel * dof_vel_scale)
-                obs_list.append(action)
+                obs_list = [
+                    cmd_vel * cmd_scale,
+                    ang_vel_I * ang_vel_scale,
+                    gravity_b,
+                    (qpos - default_angles) * dof_pos_scale,
+                    qvel * dof_vel_scale,
+                    action.astype(np.float32)
+                ]
                 ## Record Data ##
                 ang_vel_data_list.append(ang_vel_I * ang_vel_scale)
                 gravity_b_list.append(gravity_b)
