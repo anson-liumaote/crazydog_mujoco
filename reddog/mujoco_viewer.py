@@ -45,5 +45,5 @@ def printSceneInformation(mj_model):
             index = index + mj_model.sensor_dim[i]
         print(" ")
 
-mj_model = mujoco.MjModel.from_xml_path('reddog.xml')
+mj_model = mujoco.MjModel.from_xml_path('reddog_lab.xml')
 printSceneInformation(mj_model)

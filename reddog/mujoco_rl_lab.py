@@ -7,6 +7,8 @@ import torch
 import yaml
 import matplotlib.pyplot as plt
 import argparse
+from scipy.spatial.transform import Rotation as R
+
 NUM_MOTOR = 12
 
 def calculate_com_in_base_frame(model, data, base_body_id):
@@ -34,43 +36,113 @@ def calculate_com_in_base_frame(model, data, base_body_id):
     center_of_mass_base = com_sum / total_mass
     return center_of_mass_base
 
-def get_gravity_orientation(quaternion):
-    qw = quaternion[0]
-    qx = quaternion[1]
-    qy = quaternion[2]
-    qz = quaternion[3]
+# def get_gravity_orientation(quaternion):
+#     qw = quaternion[0]
+#     qx = quaternion[1]
+#     qy = quaternion[2]
+#     qz = quaternion[3]
 
-    gravity_orientation = np.zeros(3)
+#     # Define gravity vector in the world frame
+#     gravity_world = np.array([0, 0, -1])  # Standard gravity
 
-    gravity_orientation[0] = 2 * (-qz * qx + qw * qy)
-    gravity_orientation[1] = -2 * (qz * qy + qw * qx)
-    gravity_orientation[2] = 1 - 2 * (qw * qw + qz * qz)
+#     # Convert quaternion to rotation matrix
+#     rotation = R.from_quat([qx, qy, qz, qw])
+#     rotation_matrix = rotation.as_matrix()
 
-    return gravity_orientation
+#     # Rotate the gravity vector into the robot's frame
+#     projected_gravity = rotation_matrix.T @ gravity_world  # Transpose to rotate into base frame
 
-def quat_to_rot_matrix(quat: np.ndarray) -> np.ndarray:
-    """Convert input quaternion to rotation matrix.
+#     # gravity_orientation = np.zeros(3)
 
-    Args:
-        quat (np.ndarray): Input quaternion (w, x, y, z).
+#     # gravity_orientation[0] = 2 * (-qz * qx + qw * qy)
+#     # gravity_orientation[1] = -2 * (qz * qy + qw * qx)
+#     # gravity_orientation[2] = 1 - 2 * (qw * qw + qz * qz)
 
-    Returns:
-        np.ndarray: A 3x3 rotation matrix.
+#     return projected_gravity
+
+def quat_rotate_inverse(q, v):
     """
-    q = np.array(quat, dtype=np.float64, copy=True)
-    nq = np.dot(q, q)
-    if nq < 1e-10:
-        return np.identity(3)
-    q *= np.sqrt(2.0 / nq)
-    q = np.outer(q, q)
-    return np.array(
-        (
-            (1.0 - q[2, 2] - q[3, 3], q[1, 2] - q[3, 0], q[1, 3] + q[2, 0]),
-            (q[1, 2] + q[3, 0], 1.0 - q[1, 1] - q[3, 3], q[2, 3] - q[1, 0]),
-            (q[1, 3] - q[2, 0], q[2, 3] + q[1, 0], 1.0 - q[1, 1] - q[2, 2]),
-        ),
-        dtype=np.float64,
-    )
+    Rotate a vector by the inverse of a quaternion.
+    Direct translation from the PyTorch version to NumPy.
+    
+    Args:
+        q: The quaternion in (w, x, y, z) format. Shape is (..., 4).
+        v: The vector in (x, y, z) format. Shape is (..., 3).
+        
+    Returns:
+        The rotated vector in (x, y, z) format. Shape is (..., 3).
+    """
+    q_w = q[..., 0]
+    q_vec = q[..., 1:]
+    
+    # Equivalent to (2.0 * q_w**2 - 1.0).unsqueeze(-1)
+    term1 = 2.0 * np.square(q_w) - 1.0
+    term1_expanded = np.expand_dims(term1, axis=-1)
+    a = v * term1_expanded
+    
+    # Equivalent to torch.cross(q_vec, v, dim=-1) * q_w.unsqueeze(-1) * 2.0
+    q_w_expanded = np.expand_dims(q_w, axis=-1)
+    b = np.cross(q_vec, v) * q_w_expanded * 2.0
+    
+    # Equivalent to the torch.bmm or torch.einsum operations
+    # This calculates the dot product between q_vec and v
+    dot_product = np.sum(q_vec * v, axis=-1)
+    dot_product_expanded = np.expand_dims(dot_product, axis=-1)
+    c = q_vec * dot_product_expanded * 2.0
+    
+    return a - b + c
+
+def get_gravity_orientation(quaternion):
+    """
+    Get the gravity vector in the robot's base frame.
+    Uses the exact algorithm from your PyTorch code.
+    
+    Args:
+        quaternion: Quaternion in (w, x, y, z) format.
+        
+    Returns:
+        3D gravity vector in the robot's base frame.
+    """
+    # Ensure quaternion is a numpy array
+    quaternion = np.array(quaternion)
+    
+    # Standard gravity vector in world frame (pointing down)
+    gravity_world = np.array([0, 0, -1])
+    
+    # Handle both single quaternion and batched quaternions
+    if quaternion.shape == (4,):
+        quaternion = quaternion.reshape(1, 4)
+        gravity_world = gravity_world.reshape(1, 3)
+        result = quat_rotate_inverse(quaternion, gravity_world)[0]
+    else:
+        gravity_world = np.broadcast_to(gravity_world, quaternion.shape[:-1] + (3,))
+        result = quat_rotate_inverse(quaternion, gravity_world)
+    
+    return result
+
+# def quat_to_rot_matrix(quat: np.ndarray) -> np.ndarray:
+#     """Convert input quaternion to rotation matrix.
+
+#     Args:
+#         quat (np.ndarray): Input quaternion (w, x, y, z).
+
+#     Returns:
+#         np.ndarray: A 3x3 rotation matrix.
+#     """
+#     q = np.array(quat, dtype=np.float64, copy=True)
+#     nq = np.dot(q, q)
+#     if nq < 1e-10:
+#         return np.identity(3)
+#     q *= np.sqrt(2.0 / nq)
+#     q = np.outer(q, q)
+#     return np.array(
+#         (
+#             (1.0 - q[2, 2] - q[3, 3], q[1, 2] - q[3, 0], q[1, 3] + q[2, 0]),
+#             (q[1, 2] + q[3, 0], 1.0 - q[1, 1] - q[3, 3], q[2, 3] - q[1, 0]),
+#             (q[1, 3] - q[2, 0], q[2, 3] + q[1, 0], 1.0 - q[1, 1] - q[2, 2]),
+#         ),
+#         dtype=np.float64,
+#     )
 
 def pd_control(target_q, q, kp, target_dq, dq, kd):
     """Calculates torques from position commands"""
@@ -110,6 +182,9 @@ if __name__ == "__main__":
         
         cmd = np.array(config["cmd_init"], dtype=np.float32)
 
+        animation = config["animation"]
+        max_step = config["max_step"]
+
 
     target_dof_pos = default_angles.copy()
     action = np.zeros(num_actions, dtype=np.float32)
@@ -130,6 +205,7 @@ if __name__ == "__main__":
     action_list = []
 
     counter = 0
+    current_step = 50
 
     with mujoco.viewer.launch_passive(m, d) as viewer:
         # Close the viewer automatically after simulation_duration wall-seconds.
@@ -156,6 +232,7 @@ if __name__ == "__main__":
                 lin_vel_I = d.sensordata[49:52]
                 ang_vel_I = d.sensordata[52:55]
                 gravity_b = get_gravity_orientation(d.sensordata[36:40])
+                # print(gravity_b)
                 cmd_vel = np.array(config["cmd_init"], dtype=np.float32)
 
                 obs[:3] = lin_vel_I * lin_vel_scale
@@ -165,6 +242,8 @@ if __name__ == "__main__":
                 obs[12:24] = (qpos - default_angles) * dof_pos_scale
                 obs[24:36] = qvel * dof_vel_scale
                 obs[36:48] = action
+                if animation == True:
+                    obs[48] = current_step               
                 ## Record Data ##
                 lin_vel_data_list.append(lin_vel_I * lin_vel_scale)
                 ang_vel_data_list.append(ang_vel_I * ang_vel_scale)
@@ -178,10 +257,14 @@ if __name__ == "__main__":
                 # print("action :", action)
 
                 # transform action to target_dof_pos
-                if counter < 300:
+                if counter < 500:
                     target_dof_pos = default_angles
                 else:
                     target_dof_pos = action * action_scale + default_angles
+
+                    current_step += 1
+                    if current_step >= max_step:
+                        current_step = 0     
                 # target_dof_pos = action * action_scale + default_angles
             # Pick up changes to the physics state, apply perturbations, update options from GUI.
             viewer.sync()
